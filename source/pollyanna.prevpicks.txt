@@ -1,0 +1,3 @@
+; specify previous year picks to avoid
+name1 (family1) => name2 (family2)
+name3 (family1) => name4 (family2)
