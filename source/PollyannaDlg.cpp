@@ -19,6 +19,10 @@ using namespace std;
 #define PROGUPDATETIMER_ID          101
 #define PROGUPDATETIMER_INTERVAL_MS 1000
 
+// if enabled, when a pick is done, the target person is NOT shown
+// in the list to avoid the person running it from seeing the picks
+#define HIDE_TARGET_PERSON_IN_LIST
+
 Person::Person()
 : TargetPerson(NULL)
 {
@@ -54,9 +58,15 @@ CString Person::FormatForDisplay()
 	else
 		emailstr = _T(", <no email>");
 
-   CString tpstr;
-   if (TargetPerson != NULL)
-      tpstr.Format(_T(" => %s (%s)"), TargetPerson->Name, TargetPerson->Family);
+	CString tpstr;
+	if (TargetPerson != NULL)
+	{
+#ifdef HIDE_TARGET_PERSON_IN_LIST
+		tpstr = _T(" => <HIDDEN>");
+#else
+		tpstr.Format(_T(" => %s (%s)"), TargetPerson->Name, TargetPerson->Family);
+#endif
+	}
 
    CString result;
    result.Format(_T("%s (%s%s)%s"), Name, Family, emailstr, tpstr);
