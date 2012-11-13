@@ -14,7 +14,11 @@
 #define IDC_FAMILY                      1003
 #define IDC_BUTTON2                     1004
 #define IDC_DRAWNAMES                   1004
+#define IDC_EMAIL                       1004
 #define IDC_MSG                         1005
+#define IDC_EDIT_BTN                    1006
+#define IDC_EDIT_BTN2                   1007
+#define IDC_DELETE_BTN                  1007
 
 // Next default values for new objects
 // 
@@ -22,7 +26,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        130
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1006
+#define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

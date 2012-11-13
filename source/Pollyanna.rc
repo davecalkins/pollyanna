@@ -16,13 +16,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -98,19 +96,23 @@ BEGIN
     PUSHBUTTON      "Add",IDC_ADD,7,239,36,14
     PUSHBUTTON      "Draw Names!",IDC_DRAWNAMES,186,239,55,14
     LTEXT           "Static",IDC_MSG,7,260,234,30
+    PUSHBUTTON      "Edit",IDC_EDIT_BTN,45,239,36,14
+    PUSHBUTTON      "Delete",IDC_DELETE_BTN,83,239,36,14
 END
 
-IDD_PERSON DIALOGEX 0, 0, 165, 70
+IDD_PERSON DIALOGEX 0, 0, 233, 91
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Person"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     LTEXT           "Name",IDC_STATIC,7,9,19,8
-    EDITTEXT        IDC_NAME,31,7,127,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_NAME,31,7,195,14,ES_AUTOHSCROLL
     LTEXT           "Family",IDC_STATIC,7,27,21,8
-    EDITTEXT        IDC_FAMILY,31,26,82,14,ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,55,49,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,108,49,50,14
+    EDITTEXT        IDC_FAMILY,31,26,195,14,ES_AUTOHSCROLL
+    LTEXT           "Email",IDC_STATIC,7,46,17,8
+    EDITTEXT        IDC_EMAIL,31,44,195,14,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,121,70,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,176,70,50,14
 END
 
 
@@ -159,7 +161,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
@@ -180,9 +182,9 @@ BEGIN
     IDD_PERSON, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 158
+        RIGHTMARGIN, 226
         TOPMARGIN, 7
-        BOTTOMMARGIN, 63
+        BOTTOMMARGIN, 84
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -193,12 +195,12 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ABOUTBOX            "&About Pollyanna..."
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

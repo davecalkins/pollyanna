@@ -17,6 +17,7 @@ public:
 
    CString Name;
    CString Family;
+   CString Email;
 
    Person * TargetPerson;
 
@@ -69,4 +70,7 @@ public:
    CButton AddBtn;
    CButton DrawNamesBtn;
    afx_msg void OnClose();
+   afx_msg void OnBnClickedEditBtn();
+   afx_msg void OnBnClickedDeleteBtn();
+   afx_msg void OnDblclkPeople();
 };

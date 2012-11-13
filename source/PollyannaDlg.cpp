@@ -6,6 +6,9 @@
 #include "PollyannaDlg.h"
 #include "DPerson.h"
 
+#include <vector>
+using namespace std;
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -38,18 +41,25 @@ Person& Person::operator=(const Person& rhs)
    Name = rhs.Name;
    Family = rhs.Family;
    TargetPerson = rhs.TargetPerson;
+   Email = rhs.Email;
 
    return *this;
 }
 
 CString Person::FormatForDisplay()
 {
+	CString emailstr;
+	if (!Email.IsEmpty())
+		emailstr.Format(_T(", %s"), Email);
+	else
+		emailstr = _T(", <no email>");
+
    CString tpstr;
    if (TargetPerson != NULL)
       tpstr.Format(_T(" => %s (%s)"), TargetPerson->Name, TargetPerson->Family);
 
    CString result;
-   result.Format(_T("%s (%s)%s"), Name, Family, tpstr);
+   result.Format(_T("%s (%s%s)%s"), Name, Family, emailstr, tpstr);
    return result;
 }
 
@@ -58,6 +68,7 @@ IMPLEMENT_SERIAL(Person,CObject,0);
 void Person::Serialize(CArchive& ar)
 {
    BYTE Schema = 0;
+   Schema = 1; // added Email
    BYTE LoadSchema;
 
    if (ar.IsStoring())
@@ -66,6 +77,7 @@ void Person::Serialize(CArchive& ar)
       ar << Name;
       ar << Family;
       ar << TargetPerson;
+	  ar << Email;
    }
    else
    {
@@ -73,6 +85,9 @@ void Person::Serialize(CArchive& ar)
       ar >> Name;
       ar >> Family;
       ar >> TargetPerson;
+
+	  if (LoadSchema >= 1)
+		  ar >> Email;
    }
 }
 
@@ -136,6 +151,9 @@ BEGIN_MESSAGE_MAP(CPollyannaDlg, CDialog)
    ON_BN_CLICKED(IDC_DRAWNAMES, &CPollyannaDlg::OnBnClickedDrawnames)
    ON_WM_TIMER()
    ON_WM_CLOSE()
+   ON_BN_CLICKED(IDC_EDIT_BTN, &CPollyannaDlg::OnBnClickedEditBtn)
+   ON_BN_CLICKED(IDC_DELETE_BTN, &CPollyannaDlg::OnBnClickedDeleteBtn)
+   ON_LBN_DBLCLK(IDC_PEOPLE, &CPollyannaDlg::OnDblclkPeople)
 END_MESSAGE_MAP()
 
 
@@ -239,11 +257,65 @@ void CPollyannaDlg::OnBnClickedAdd()
    Person & p = *new Person;
    p.Name = dlg.Name;
    p.Family = dlg.Family;
+   p.Email = dlg.Email;
 
    int idx = PeopleList.AddString(p.FormatForDisplay());
    PeopleList.SetItemData(idx,(DWORD_PTR)(&p));
 
    Save();
+}
+
+void CPollyannaDlg::OnBnClickedEditBtn()
+{
+	int sel = PeopleList.GetCurSel();
+	if (sel < 0)
+		return;
+
+	Person& p = *((Person*)PeopleList.GetItemData(sel));
+
+	DPerson dlg;
+	dlg.Name = p.Name;
+	dlg.Family = p.Family;
+	dlg.Email = p.Email;
+	if (dlg.DoModal() != IDOK)
+		return;
+
+	p.Name = dlg.Name;
+	p.Family = dlg.Family;
+	p.Email = dlg.Email;
+
+	vector<Person*> people;
+	for (int i = 0; i < PeopleList.GetCount(); i++)
+	{
+		people.push_back((Person*)PeopleList.GetItemData(i));
+	}
+
+	PeopleList.LockWindowUpdate();
+	PeopleList.ResetContent();
+	for (auto i = people.begin(); i != people.end(); i++)
+	{
+		Person& p = *(*i);
+		int idx = PeopleList.AddString(p.FormatForDisplay());
+		PeopleList.SetItemData(idx,(DWORD_PTR)&p);
+	}
+	PeopleList.UnlockWindowUpdate();
+
+	Save();
+}
+
+
+void CPollyannaDlg::OnBnClickedDeleteBtn()
+{
+	int sel = PeopleList.GetCurSel();
+	if (sel < 0)
+		return;
+
+	Person& p = *((Person*)PeopleList.GetItemData(sel));
+	delete &p;
+
+	PeopleList.DeleteString(sel);
+
+	Save();
 }
 
 void ProcessWaitingMessages()
@@ -559,4 +631,11 @@ void CPollyannaDlg::OnClose()
 	PostQuitMessage(0);
 
 	CDialog::OnClose();
+}
+
+
+
+void CPollyannaDlg::OnDblclkPeople()
+{
+	OnBnClickedEditBtn();
 }

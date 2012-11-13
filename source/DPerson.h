@@ -21,4 +21,5 @@ protected:
 public:
    CString Name;
    CString Family;
+   CString Email;
 };
