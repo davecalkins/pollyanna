@@ -23,6 +23,8 @@ public:
 	public:
 	virtual BOOL InitInstance();
 
+	CString appDir;
+
 // Implementation
 
 	DECLARE_MESSAGE_MAP()

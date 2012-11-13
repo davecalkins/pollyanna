@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<ArrayOfArrayOfArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ArrayOfArrayOfString>
+    <ArrayOfString>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\DPerson.cpp</string>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\DPerson.h</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\Pollyanna.cpp</string>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\Pollyanna.h</string>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\Pollyanna.rc</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\PollyannaDlg.cpp</string>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\PollyannaDlg.h</string>
+    </ArrayOfString>
+  </ArrayOfArrayOfString>
+</ArrayOfArrayOfArrayOfString>

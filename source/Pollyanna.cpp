@@ -5,6 +5,9 @@
 #include "Pollyanna.h"
 #include "PollyannaDlg.h"
 
+#include <vector>
+using namespace std;
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -57,6 +60,13 @@ BOOL CPollyannaApp::InitInstance()
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
 	SetRegistryKey(_T("Pollyanna"));
+
+	vector<TCHAR> buf;
+	buf.resize(MAX_PATH+1,0);
+	GetModuleFileName(NULL,&buf[0],MAX_PATH);
+	CString tmp = &buf[0];
+	int bs = tmp.ReverseFind(_T('\\'));
+	appDir = tmp.Left(bs+1);
 
 	CPollyannaDlg dlg;
 	m_pMainWnd = &dlg;

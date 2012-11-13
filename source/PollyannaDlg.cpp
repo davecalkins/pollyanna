@@ -164,6 +164,7 @@ BEGIN_MESSAGE_MAP(CPollyannaDlg, CDialog)
    ON_BN_CLICKED(IDC_EDIT_BTN, &CPollyannaDlg::OnBnClickedEditBtn)
    ON_BN_CLICKED(IDC_DELETE_BTN, &CPollyannaDlg::OnBnClickedDeleteBtn)
    ON_LBN_DBLCLK(IDC_PEOPLE, &CPollyannaDlg::OnDblclkPeople)
+   ON_BN_CLICKED(IDC_WRITE_PICKS_TO_FILE_BTN, &CPollyannaDlg::OnBnClickedWritePicksToFileBtn)
 END_MESSAGE_MAP()
 
 
@@ -648,4 +649,50 @@ void CPollyannaDlg::OnClose()
 void CPollyannaDlg::OnDblclkPeople()
 {
 	OnBnClickedEditBtn();
+}
+
+
+void CPollyannaDlg::OnBnClickedWritePicksToFileBtn()
+{
+	for (int i = 0; i < PeopleList.GetCount(); i++)
+	{
+		Person& p = *((Person*)PeopleList.GetItemData(i));
+		if (p.TargetPerson == NULL)
+		{
+			AfxMessageBox(_T("Draw Names first!"));
+			return;
+		}
+	}
+
+	CTime now = CTime::GetCurrentTime();
+
+	CString fileName;
+	fileName.Format(_T("%spollyanna.prevpicks-%s.txt"),
+		theApp.appDir,
+		now.Format(_T("%Y")));
+
+	CStdioFile f;
+	if (!f.Open(fileName,CFile::modeCreate|CFile::modeWrite|CFile::typeText))
+	{
+		AfxMessageBox(_T("File open error"));
+		return;
+	}
+
+	for (int i = 0; i < PeopleList.GetCount(); i++)
+	{
+		Person& p = *((Person*)PeopleList.GetItemData(i));
+
+		CString s;
+		s.Format(_T("%s (%s) => %s (%s)\n"),
+			p.Name,
+			p.Family,
+			p.TargetPerson->Name,
+			p.TargetPerson->Family);
+		f.WriteString(s);
+	}
+
+	f.Flush();
+	f.Close();
+
+	AfxMessageBox(_T("File Written"));
 }

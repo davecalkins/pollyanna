@@ -73,4 +73,5 @@ public:
    afx_msg void OnBnClickedEditBtn();
    afx_msg void OnBnClickedDeleteBtn();
    afx_msg void OnDblclkPeople();
+   afx_msg void OnBnClickedWritePicksToFileBtn();
 };
