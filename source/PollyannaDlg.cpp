@@ -5,8 +5,11 @@
 #include "Pollyanna.h"
 #include "PollyannaDlg.h"
 #include "DPerson.h"
+#include "CSmtp.h"
+#include "Utils.h"
 
 #include <vector>
+#include <map>
 using namespace std;
 
 #ifdef _DEBUG
@@ -22,6 +25,13 @@ using namespace std;
 // if enabled, when a pick is done, the target person is NOT shown
 // in the list to avoid the person running it from seeing the picks
 #define HIDE_TARGET_PERSON_IN_LIST
+
+// Email config
+#define EMAIL_CONFIG_SMTP_SERVER   _T("smtp.server.here")
+#define EMAIL_CONFIG_SMTP_PORT     25
+#define EMAIL_CONFIG_SENDER_NAME   _T("from")
+#define EMAIL_CONFIG_SENDER_EMAIL  _T("from@domain.com")
+#define EMAIL_CONFIG_REPLYTO_EMAIL _T("replyto@domain.com")
 
 Person::Person()
 : TargetPerson(NULL)
@@ -165,6 +175,7 @@ BEGIN_MESSAGE_MAP(CPollyannaDlg, CDialog)
    ON_BN_CLICKED(IDC_DELETE_BTN, &CPollyannaDlg::OnBnClickedDeleteBtn)
    ON_LBN_DBLCLK(IDC_PEOPLE, &CPollyannaDlg::OnDblclkPeople)
    ON_BN_CLICKED(IDC_WRITE_PICKS_TO_FILE_BTN, &CPollyannaDlg::OnBnClickedWritePicksToFileBtn)
+   ON_BN_CLICKED(IDC_EMAIL_PICKS_BTN, &CPollyannaDlg::OnBnClickedEmailPicksBtn)
 END_MESSAGE_MAP()
 
 
@@ -198,7 +209,7 @@ BOOL CPollyannaDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
-   srand(time(NULL));
+   srand((unsigned int)time(NULL));
    Load();
    MsgWnd.SetWindowText(_T(""));
 
@@ -695,4 +706,110 @@ void CPollyannaDlg::OnBnClickedWritePicksToFileBtn()
 	f.Close();
 
 	AfxMessageBox(_T("File Written"));
+}
+
+BOOL CPollyannaDlg::SendEmail(CStringArray& recipients, LPCTSTR subject, CStringArray& msgLines, CString& errDesc)
+{
+	CWaitCursor wc;
+
+	try
+	{
+		CSmtp mail;
+
+		mail.SetSMTPServer(STR_T2A(EMAIL_CONFIG_SMTP_SERVER),EMAIL_CONFIG_SMTP_PORT);
+		mail.SetSenderName(STR_T2A(EMAIL_CONFIG_SENDER_NAME));
+		mail.SetSenderMail(STR_T2A(EMAIL_CONFIG_SENDER_EMAIL));
+		mail.SetReplyTo(STR_T2A(EMAIL_CONFIG_REPLYTO_EMAIL));
+
+		mail.SetXPriority(XPRIORITY_NORMAL);
+		mail.SetXMailer("CSmtp mailer");
+
+		for (INT_PTR i = 0; i < recipients.GetSize(); i++)
+			mail.AddRecipient(STR_T2A(recipients[i]));
+
+		mail.SetSubject(STR_T2A(subject));
+
+		for (INT_PTR i = 0; i < msgLines.GetSize(); i++)
+			mail.AddMsgLine(STR_T2A(msgLines[i]));
+
+		mail.Send();
+	}
+	catch(ECSmtp e)
+	{
+		errDesc = STR_A2T(e.GetErrorText().c_str());
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void CPollyannaDlg::OnBnClickedEmailPicksBtn()
+{
+	for (int i = 0; i < PeopleList.GetCount(); i++)
+	{
+		Person& p = *((Person*)PeopleList.GetItemData(i));
+		if (p.TargetPerson == NULL)
+		{
+			AfxMessageBox(_T("Draw Names first!"));
+			return;
+		}
+	}
+
+	map<CString,vector<CString>> msgMap; // recip => msg lines
+
+	for (int i = 0; i < PeopleList.GetCount(); i++)
+	{
+		Person& p = *((Person*)PeopleList.GetItemData(i));
+
+		vector<CString> msgLines;
+		auto j = msgMap.find(p.Email);
+		if (j != msgMap.end())
+		{
+			msgLines = j->second;
+		}
+		else
+		{
+			msgLines.push_back(_T("This message contains the results of the gift drawing."));
+			msgLines.push_back(_T("In the below, A => B means that person A will get a gift for person B."));
+			msgLines.push_back(_T(""));
+		}
+
+		CString s;
+		s.Format(_T("%s (%s) => %s (%s)"),
+			p.Name,
+			p.Family,
+			p.TargetPerson->Name,
+			p.TargetPerson->Family);
+		msgLines.push_back(s);
+
+		msgMap[p.Email] = msgLines;
+	}
+
+	CString errDesc;
+	DWORD_PTR numErrors = 0;
+	for (auto j = msgMap.begin(); j != msgMap.end(); j++)
+	{
+		CString recipient = j->first;
+		vector<CString> msgLines = j->second;
+
+		CStringArray recipients;
+		recipients.Add(recipient);
+
+		CStringArray msgLinesCSA;
+		for (auto k = msgLines.begin(); k != msgLines.end(); k++)
+		{
+			msgLinesCSA.Add(*k);
+		}
+
+		if (!SendEmail(recipients,_T("Gift Drawing Results"),msgLinesCSA,errDesc))
+		{
+			TRACE1("Email Error: %s\n", errDesc);
+			numErrors++;
+		}
+	}
+
+	if (numErrors > 0)
+		AfxMessageBox(_T("Finished with errors."));
+	else
+		AfxMessageBox(_T("Finished - no errors!"));
 }

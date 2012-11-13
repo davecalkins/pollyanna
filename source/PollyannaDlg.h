@@ -55,6 +55,8 @@ protected:
 
    BOOL KeepRunning;
 
+   BOOL SendEmail(CStringArray& recipients, LPCTSTR subject, CStringArray& msgLines, CString& errDesc);
+
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -74,4 +76,5 @@ public:
    afx_msg void OnBnClickedDeleteBtn();
    afx_msg void OnDblclkPeople();
    afx_msg void OnBnClickedWritePicksToFileBtn();
+   afx_msg void OnBnClickedEmailPicksBtn();
 };
