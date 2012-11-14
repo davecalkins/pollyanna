@@ -77,4 +77,5 @@ public:
    afx_msg void OnDblclkPeople();
    afx_msg void OnBnClickedWritePicksToFileBtn();
    afx_msg void OnBnClickedEmailPicksBtn();
+   afx_msg void OnBnClickedDecodePicksFileBtn();
 };

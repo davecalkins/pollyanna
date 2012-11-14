@@ -2,6 +2,13 @@
 <ArrayOfArrayOfArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <ArrayOfArrayOfString>
     <ArrayOfString>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\base64.cpp</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\CSmtp.cpp</string>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\CSmtp.h</string>
+    </ArrayOfString>
+    <ArrayOfString>
       <string>C:\Users\dave\Documents\devel\pollyanna\source\DPerson.cpp</string>
       <string>C:\Users\dave\Documents\devel\pollyanna\source\DPerson.h</string>
     </ArrayOfString>
@@ -13,6 +20,9 @@
     <ArrayOfString>
       <string>C:\Users\dave\Documents\devel\pollyanna\source\PollyannaDlg.cpp</string>
       <string>C:\Users\dave\Documents\devel\pollyanna\source\PollyannaDlg.h</string>
+    </ArrayOfString>
+    <ArrayOfString>
+      <string>C:\Users\dave\Documents\devel\pollyanna\source\Utils.h</string>
     </ArrayOfString>
   </ArrayOfArrayOfString>
 </ArrayOfArrayOfArrayOfString>

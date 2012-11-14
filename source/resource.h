@@ -20,8 +20,9 @@
 #define IDC_EDIT_BTN2                   1007
 #define IDC_DELETE_BTN                  1007
 #define IDC_WRITE_PICKS_TO_FILE_BTN     1009
-#define IDC_WRITE_PICKS_TO_FILE_BTN2    1010
 #define IDC_EMAIL_PICKS_BTN             1010
+#define IDC_WRITE_PICKS_TO_FILE_BTN2    1011
+#define IDC_DECODE_PICKS_FILE_BTN       1011
 
 // Next default values for new objects
 // 

@@ -6,6 +6,7 @@
 #include "PollyannaDlg.h"
 #include "DPerson.h"
 #include "CSmtp.h"
+#include "base64.h"
 #include "Utils.h"
 
 #include <vector>
@@ -176,6 +177,7 @@ BEGIN_MESSAGE_MAP(CPollyannaDlg, CDialog)
    ON_LBN_DBLCLK(IDC_PEOPLE, &CPollyannaDlg::OnDblclkPeople)
    ON_BN_CLICKED(IDC_WRITE_PICKS_TO_FILE_BTN, &CPollyannaDlg::OnBnClickedWritePicksToFileBtn)
    ON_BN_CLICKED(IDC_EMAIL_PICKS_BTN, &CPollyannaDlg::OnBnClickedEmailPicksBtn)
+   ON_BN_CLICKED(IDC_DECODE_PICKS_FILE_BTN, &CPollyannaDlg::OnBnClickedDecodePicksFileBtn)
 END_MESSAGE_MAP()
 
 
@@ -678,7 +680,7 @@ void CPollyannaDlg::OnBnClickedWritePicksToFileBtn()
 	CTime now = CTime::GetCurrentTime();
 
 	CString fileName;
-	fileName.Format(_T("%spollyanna.prevpicks-%s.txt"),
+	fileName.Format(_T("%spollyanna.prevpicks-%s-base64.txt"),
 		theApp.appDir,
 		now.Format(_T("%Y")));
 
@@ -694,12 +696,15 @@ void CPollyannaDlg::OnBnClickedWritePicksToFileBtn()
 		Person& p = *((Person*)PeopleList.GetItemData(i));
 
 		CString s;
-		s.Format(_T("%s (%s) => %s (%s)\n"),
+		s.Format(_T("%s (%s) => %s (%s)"),
 			p.Name,
 			p.Family,
 			p.TargetPerson->Name,
 			p.TargetPerson->Family);
-		f.WriteString(s);
+
+		CString es = STR_A2T(base64_encode((unsigned char*)(LPCSTR)(STR_T2A(s)),s.GetLength()).c_str());
+
+		f.WriteString(es + _T("\n"));
 	}
 
 	f.Flush();
@@ -812,4 +817,38 @@ void CPollyannaDlg::OnBnClickedEmailPicksBtn()
 		AfxMessageBox(_T("Finished with errors."));
 	else
 		AfxMessageBox(_T("Finished - no errors!"));
+}
+
+
+void CPollyannaDlg::OnBnClickedDecodePicksFileBtn()
+{
+	CFileDialog dlg(TRUE,_T("*.txt"),_T("prevpicks-base64.txt"),0,_T("Text Files (*.txt)|*.txt||"));
+	if (dlg.DoModal() != IDOK)
+		return;
+
+	CStdioFile fin;
+	if (!fin.Open(dlg.GetPathName(),CFile::modeRead|CFile::shareDenyWrite|CFile::typeText))
+	{
+		AfxMessageBox(_T("Unable to open input file!"));
+		return;
+	}
+
+	CStdioFile fout;
+	if (!fout.Open(dlg.GetPathName() + _T("-decoded.txt"),CFile::modeCreate|CFile::modeWrite|CFile::typeText))
+	{
+		AfxMessageBox(_T("Unable to open output file!"));
+		return;
+	}
+
+	CString lineEnc;
+	while (fin.ReadString(lineEnc))
+	{
+		CString line = STR_A2T(base64_decode(string(STR_T2A(lineEnc))).c_str());
+		fout.WriteString(line + _T("\n"));
+	}
+
+	fout.Flush();
+	fout.Close();
+
+	fin.Close();
 }
