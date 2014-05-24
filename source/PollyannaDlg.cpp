@@ -61,27 +61,42 @@ Person& Person::operator=(const Person& rhs)
    return *this;
 }
 
-CString Person::FormatForDisplay()
+CString Person::Format(FormatType ft)
 {
-	CString emailstr;
-	if (!Email.IsEmpty())
-		emailstr.Format(_T(", %s"), Email);
-	else
-		emailstr = _T(", <no email>");
+	CString result;
 
-	CString tpstr;
-	if (TargetPerson != NULL)
+	if (ft == FT_DISPLAY_TO_USER)
 	{
+		CString emailstr;
+		if (!Email.IsEmpty())
+			emailstr.Format(_T(", %s"), Email);
+		else
+			emailstr = _T(", <no email>");
+
+		CString tpstr;
+		if (TargetPerson != NULL)
+		{
 #ifdef HIDE_TARGET_PERSON_IN_LIST
-		tpstr = _T(" => <HIDDEN>");
+			tpstr = _T(" => <HIDDEN>");
 #else
-		tpstr.Format(_T(" => %s (%s)"), TargetPerson->Name, TargetPerson->Family);
+			tpstr.Format(_T(" => %s (%s)"), TargetPerson->Name, TargetPerson->Family);
 #endif
+		}
+
+		result.Format(_T("%s (%s%s)%s"), Name, Family, emailstr, tpstr);
+	}
+	else if (ft == FT_COMPARE_WITH_PREV_PICKS)
+	{
+		CString tpstr;
+		if (TargetPerson != NULL)
+		{
+			tpstr.Format(_T(" => %s (%s)"), TargetPerson->Name, TargetPerson->Family);
+		}
+
+		result.Format(_T("%s (%s)%s"), Name, Family, tpstr);
 	}
 
-   CString result;
-   result.Format(_T("%s (%s%s)%s"), Name, Family, emailstr, tpstr);
-   return result;
+	return result;
 }
 
 IMPLEMENT_SERIAL(Person,CObject,0);
@@ -283,7 +298,7 @@ void CPollyannaDlg::OnBnClickedAdd()
    p.Family = dlg.Family;
    p.Email = dlg.Email;
 
-   int idx = PeopleList.AddString(p.FormatForDisplay());
+   int idx = PeopleList.AddString(p.Format(Person::FT_DISPLAY_TO_USER));
    PeopleList.SetItemData(idx,(DWORD_PTR)(&p));
 
    Save();
@@ -319,7 +334,7 @@ void CPollyannaDlg::OnBnClickedEditBtn()
 	for (auto i = people.begin(); i != people.end(); i++)
 	{
 		Person& p = *(*i);
-		int idx = PeopleList.AddString(p.FormatForDisplay());
+		int idx = PeopleList.AddString(p.Format(Person::FT_DISPLAY_TO_USER));
 		PeopleList.SetItemData(idx,(DWORD_PTR)&p);
 	}
 	PeopleList.UnlockWindowUpdate();
@@ -354,218 +369,223 @@ void ProcessWaitingMessages()
 
 void CPollyannaDlg::OnBnClickedDrawnames()
 {
-   CWaitCursor wc;
+	CWaitCursor wc;
 
-   MsgWnd.SetWindowText(_T(""));
+	MsgWnd.SetWindowText(_T(""));
 
-   AddBtn.EnableWindow(FALSE);
-   DrawNamesBtn.EnableWindow(FALSE);
+	AddBtn.EnableWindow(FALSE);
+	DrawNamesBtn.EnableWindow(FALSE);
 
-   KeepRunning = TRUE;
+	KeepRunning = TRUE;
 
-   StartTickCount = GetTickCount();
-   SetTimer(PROGUPDATETIMER_ID,PROGUPDATETIMER_INTERVAL_MS,NULL);
+	StartTickCount = GetTickCount();
+	SetTimer(PROGUPDATETIMER_ID,PROGUPDATETIMER_INTERVAL_MS,NULL);
 
-   CStringArray PrevPicks;
-   CStdioFile ppf;
-   if (ppf.Open(PREVPICKSFILE,CFile::modeRead|CFile::typeText))
-   {
-      CString l;
-      while (ppf.ReadString(l))
-      {
-         l.Trim();
-         if (l.GetLength() == 0)
-            continue;
-         if (l[0] == _T(';'))
-            continue;
-         PrevPicks.Add(l);
-      }
-      ppf.Close();
-   }
+	CStringArray PrevPicks;
+	CStdioFile ppf;
+	if (ppf.Open(PREVPICKSFILE,CFile::modeRead|CFile::typeText))
+	{
+		CString l;
+		while (ppf.ReadString(l))
+		{
+			l.Trim();
+			if (l.GetLength() == 0)
+				continue;
+			if (l[0] == _T(';'))
+				continue;
+			PrevPicks.Add(l);
+		}
+		ppf.Close();
+	}
 
-   NumTries = 0;
-   NumDraws = 0;
-   NumRejected = 0;
+	NumTries = 0;
+	NumDraws = 0;
+	NumRejected = 0;
 
-   BOOL KeepTrying = TRUE;
-   while (KeepTrying && KeepRunning)
-   {
-      ProcessWaitingMessages();
+	BOOL KeepTrying = TRUE;
+	while (KeepTrying && KeepRunning)
+	{
+		ProcessWaitingMessages();
 
-      NumTries++;
-      KeepTrying = FALSE;
+		NumTries++;
+		KeepTrying = FALSE;
 
-      CArray<Person*> People;
-      for (int i = 0; i < PeopleList.GetCount(); i++)
-      {
-         Person& p = *((Person*)PeopleList.GetItemData(i));
-         p.TargetPerson = NULL;
-         People.Add(&p);
-      }
+		CArray<Person*> People;
+		for (int i = 0; i < PeopleList.GetCount(); i++)
+		{
+			Person& p = *((Person*)PeopleList.GetItemData(i));
+			p.TargetPerson = NULL;
+			People.Add(&p);
+		}
 
-      CArray<Person*> PeopleNeedingAssignments;
-      PeopleNeedingAssignments.Append(People);
+		CArray<Person*> PeopleNeedingAssignments;
+		PeopleNeedingAssignments.Append(People);
 
-      CArray<Person*> RemainingRecipients;
-      RemainingRecipients.Append(People);
+		CArray<Person*> RemainingRecipients;
+		RemainingRecipients.Append(People);
 
-      int r;
-      double per;
-      int ridx;
+		int r;
+		double per;
+		int ridx;
 
-      while ((PeopleNeedingAssignments.GetSize() > 0) && KeepRunning)
-      {
-		 ProcessWaitingMessages();
+		while ((PeopleNeedingAssignments.GetSize() > 0) && KeepRunning)
+		{
+			ProcessWaitingMessages();
 
-         int PersonSelectedForAssignmentIdx = -1;
-         Person* pPersonSelectedForAssignment = NULL;
-         if (PeopleNeedingAssignments.GetSize() == 1)
-         {
-            pPersonSelectedForAssignment = PeopleNeedingAssignments[0];
-            PersonSelectedForAssignmentIdx = 0;
-         }
-         else
-         {
-            r = rand();
-            per = (double)r / (double)RAND_MAX;
-            ridx = (int)(per * (double)(PeopleNeedingAssignments.GetSize()-1));
-            pPersonSelectedForAssignment = PeopleNeedingAssignments[ridx];
-            PersonSelectedForAssignmentIdx = ridx;
-         }
-         Person& p = *pPersonSelectedForAssignment;
+			int PersonSelectedForAssignmentIdx = -1;
+			Person* pPersonSelectedForAssignment = NULL;
+			if (PeopleNeedingAssignments.GetSize() == 1)
+			{
+				pPersonSelectedForAssignment = PeopleNeedingAssignments[0];
+				PersonSelectedForAssignmentIdx = 0;
+			}
+			else
+			{
+				r = rand();
+				per = (double)r / (double)RAND_MAX;
+				ridx = (int)(per * (double)(PeopleNeedingAssignments.GetSize()-1));
+				pPersonSelectedForAssignment = PeopleNeedingAssignments[ridx];
+				PersonSelectedForAssignmentIdx = ridx;
+			}
+			Person& p = *pPersonSelectedForAssignment;
 
-         BOOL NonFamilyLeft = FALSE;
-         for (INT_PTR j = 0; (j < RemainingRecipients.GetSize()) && !NonFamilyLeft; j++)
-         {
-            Person& op = *RemainingRecipients[j];
-            if (op.Family.CompareNoCase(p.Family) != 0)
-               NonFamilyLeft = TRUE;
-         }
+			BOOL NonFamilyLeft = FALSE;
+			for (INT_PTR j = 0; (j < RemainingRecipients.GetSize()) && !NonFamilyLeft; j++)
+			{
+				Person& op = *RemainingRecipients[j];
+				if (op.Family.CompareNoCase(p.Family) != 0)
+					NonFamilyLeft = TRUE;
+			}
 
-         if (!NonFamilyLeft)
-         {
-            KeepTrying = TRUE;
-            break;
-         }
+			if (!NonFamilyLeft)
+			{
+				KeepTrying = TRUE;
+				break;
+			}
 
-         BOOL GotRecipient = FALSE;
-         while (!GotRecipient && KeepRunning)
-         {
-            NumDraws++;
+			BOOL GotRecipient = FALSE;
+			while (!GotRecipient && KeepRunning)
+			{
+				NumDraws++;
 
-            r = rand();
-            per = (double)r / (double)RAND_MAX;
-            ridx = (int)(per * (double)(RemainingRecipients.GetSize()-1));
+				r = rand();
+				per = (double)r / (double)RAND_MAX;
+				ridx = (int)(per * (double)(RemainingRecipients.GetSize()-1));
 
-            Person& op = *RemainingRecipients[ridx];
-            if (op.Family.CompareNoCase(p.Family) != 0)
-            {
-               GotRecipient = TRUE;
-               p.TargetPerson = &op;
-               PeopleNeedingAssignments.RemoveAt(PersonSelectedForAssignmentIdx);
-               RemainingRecipients.RemoveAt(ridx);
-            }
-         }
-      }
+				Person& op = *RemainingRecipients[ridx];
+				if (op.Family.CompareNoCase(p.Family) != 0)
+				{
+					GotRecipient = TRUE;
+					p.TargetPerson = &op;
+					PeopleNeedingAssignments.RemoveAt(PersonSelectedForAssignmentIdx);
+					RemainingRecipients.RemoveAt(ridx);
+				}
+			}
+		}
 
-      //
-      // make sure noone got the same person as in a prev pick
-      //
-      if (!KeepTrying)
-      {
-         for (INT_PTR i = 0; i < People.GetSize(); i++)
-         {
-            Person& p = *People[i];
-            CString curPick = p.FormatForDisplay();
+		//
+		// make sure noone got the same person as in a prev pick
+		//
+		if (!KeepTrying)
+		{
+			for (INT_PTR i = 0; i < People.GetSize(); i++)
+			{
+				Person& p = *People[i];
+				CString curPick = p.Format(Person::FT_COMPARE_WITH_PREV_PICKS);
 
-            BOOL WasPrevPick = FALSE;
-            for (INT_PTR j = 0; (j < PrevPicks.GetSize()) && !WasPrevPick; j++)
-            {
-               CString& prevPick = PrevPicks[j];
-               if (curPick.CompareNoCase(prevPick) == 0)
-                  WasPrevPick = TRUE;
-            }
+				BOOL WasPrevPick = FALSE;
+				for (INT_PTR j = 0; (j < PrevPicks.GetSize()) && !WasPrevPick; j++)
+				{
+					CString prevPick = PrevPicks[j];
 
-            if (WasPrevPick)
-            {
-               KeepTrying = TRUE;
-               break;
-            }
-         }
+					curPick.Replace(_T(" "),_T(""));
+					prevPick.Replace(_T(" "),_T(""));
+					if (curPick.CompareNoCase(prevPick) == 0)
+						WasPrevPick = TRUE;
+				}
 
-         if (KeepTrying)
-            NumRejected++;
-      }
+				if (WasPrevPick)
+				{
+					KeepTrying = TRUE;
+					break;
+				}
+			}
 
-      //
-      // make sure no family got only 1 other family
-      //
-      if (!KeepTrying)
-      {
-         CMapStringToOb FamilyAssignments;
+			if (KeepTrying)
+				NumRejected++;
+		}
 
-         for (INT_PTR i = 0; i < People.GetSize(); i++)
-         {
-            Person& p = *People[i];
+		//
+		// make sure no family got only 1 other family
+		//
+		//if (!KeepTrying)
+		//{
+		//	CMapStringToOb FamilyAssignments;
 
-            CStringArray* _AssignmentArr;
-            if (!FamilyAssignments.Lookup(p.Family,(CObject*&)_AssignmentArr))
-            {
-               _AssignmentArr = new CStringArray;
-               FamilyAssignments.SetAt(p.Family,(CObject*&)_AssignmentArr);
-            }
-            CStringArray& AssignmentArr = *_AssignmentArr;
+		//	for (INT_PTR i = 0; i < People.GetSize(); i++)
+		//	{
+		//		Person& p = *People[i];
 
-            Person& tp = *p.TargetPerson;
+		//		CStringArray* _AssignmentArr;
+		//		if (!FamilyAssignments.Lookup(p.Family,(CObject*&)_AssignmentArr))
+		//		{
+		//			_AssignmentArr = new CStringArray;
+		//			FamilyAssignments.SetAt(p.Family,(CObject*&)_AssignmentArr);
+		//		}
+		//		CStringArray& AssignmentArr = *_AssignmentArr;
 
-            BOOL TargetFamilyInArr = FALSE;
-            for (INT_PTR j = 0; (j < AssignmentArr.GetSize()) && !TargetFamilyInArr; j++)
-            {
-               if (tp.Family.CompareNoCase(AssignmentArr[j]) == 0)
-                  TargetFamilyInArr = TRUE;
-            }
+		//		Person& tp = *p.TargetPerson;
 
-            if (!TargetFamilyInArr)
-               AssignmentArr.Add(tp.Family);
-         }
+		//		BOOL TargetFamilyInArr = FALSE;
+		//		for (INT_PTR j = 0; (j < AssignmentArr.GetSize()) && !TargetFamilyInArr; j++)
+		//		{
+		//			if (tp.Family.CompareNoCase(AssignmentArr[j]) == 0)
+		//				TargetFamilyInArr = TRUE;
+		//		}
 
-         POSITION pos = FamilyAssignments.GetStartPosition();
-         while (pos != NULL)
-         {
-            CString FamilyName;
-            CStringArray* AssignmentArr;
-            FamilyAssignments.GetNextAssoc(pos,FamilyName,(CObject*&)AssignmentArr);
-            if (AssignmentArr->GetSize() < 2)
-            {
-               KeepTrying = TRUE;
-            }
-            delete AssignmentArr;
-         }
+		//		if (!TargetFamilyInArr)
+		//			AssignmentArr.Add(tp.Family);
+		//	}
 
-         if (KeepTrying)
-            NumRejected++;
-      }
+		//	POSITION pos = FamilyAssignments.GetStartPosition();
+		//	while (pos != NULL)
+		//	{
+		//		CString FamilyName;
+		//		CStringArray* AssignmentArr;
+		//		FamilyAssignments.GetNextAssoc(pos,FamilyName,(CObject*&)AssignmentArr);
+		//		if (AssignmentArr->GetSize() < 2)
+		//		{
+		//			KeepTrying = TRUE;
+		//		}
+		//		delete AssignmentArr;
+		//	}
 
-      if (!KeepTrying)
-      {
-         PeopleList.ResetContent();
-         for (INT_PTR i = 0; i < People.GetSize(); i++)
-         {
-            Person& p = *People[i];
-            int idx = PeopleList.AddString(p.FormatForDisplay());
-            PeopleList.SetItemData(idx,(DWORD_PTR)(&p));
-         }
-      }
-   }
+		//	if (KeepTrying)
+		//		NumRejected++;
+		//}
 
-   KillTimer(PROGUPDATETIMER_ID);
+		if (!KeepTrying)
+		{
+			PeopleList.LockWindowUpdate();
+			PeopleList.ResetContent();
+			for (INT_PTR i = 0; i < People.GetSize(); i++)
+			{
+				Person& p = *People[i];
+				int idx = PeopleList.AddString(p.Format(Person::FT_DISPLAY_TO_USER));
+				PeopleList.SetItemData(idx,(DWORD_PTR)(&p));
+			}
+			PeopleList.UnlockWindowUpdate();
+		}
+	}
 
-   AddBtn.EnableWindow(TRUE);
-   DrawNamesBtn.EnableWindow(TRUE);
+	KillTimer(PROGUPDATETIMER_ID);
 
-   CString msg;
-   msg.Format(_T("Got it in %d tries, %d draws, %d rejected solutions"), NumTries, NumDraws, NumRejected);
-   MsgWnd.SetWindowText(msg);
+	AddBtn.EnableWindow(TRUE);
+	DrawNamesBtn.EnableWindow(TRUE);
+
+	CString msg;
+	msg.Format(_T("Got it in %d tries, %d draws, %d rejected solutions"), NumTries, NumDraws, NumRejected);
+	MsgWnd.SetWindowText(msg);
 }
 
 void CPollyannaDlg::Save()
@@ -628,7 +648,7 @@ void CPollyannaDlg::Serialize(CArchive& ar)
          p.Serialize(ar);
          p.TargetPerson = NULL;
 
-         int idx = PeopleList.AddString(p.FormatForDisplay());
+		 int idx = PeopleList.AddString(p.Format(Person::FT_DISPLAY_TO_USER));
          PeopleList.SetItemData(idx,(DWORD_PTR)(&p));
       }
    }
@@ -775,7 +795,7 @@ void CPollyannaDlg::OnBnClickedEmailPicksBtn()
 		else
 		{
 			msgLines.push_back(_T("This message contains the results of the gift drawing."));
-			msgLines.push_back(_T("In the below, A => B means that person A will get a gift for person B."));
+			msgLines.push_back(_T("In the below, Joe => Dad means that Joe will get a gift for Dad."));
 			msgLines.push_back(_T(""));
 		}
 

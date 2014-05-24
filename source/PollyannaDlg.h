@@ -13,7 +13,13 @@ public:
 
    Person& operator=(const Person& rhs);
 
-   CString FormatForDisplay();
+   typedef enum
+   {
+	   FT_DISPLAY_TO_USER,
+	   FT_COMPARE_WITH_PREV_PICKS
+   } FormatType;
+
+   CString Format(FormatType ft);
 
    CString Name;
    CString Family;
